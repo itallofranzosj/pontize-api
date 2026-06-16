@@ -3,12 +3,15 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const { default: app } = await import('../dist/api/index.js');
+    const path = req.url || '/';
     
     const response = await app.fetch(
-      new Request('https://api.pontize.com/auth/login', {
-        method: 'POST',
+      new Request(`https://api.pontize.com${path}`, {
+        method: req.method || 'GET',
         headers: new Headers(req.headers as Record<string, string>),
-        body: req.body ? JSON.stringify(req.body) : undefined,
+        body: ['GET', 'HEAD'].includes(req.method || '') 
+          ? undefined 
+          : req.body ? JSON.stringify(req.body) : undefined,
       })
     );
 
