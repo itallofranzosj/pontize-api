@@ -1,16 +1,18 @@
-const app = require('../dist/api/index').default;
+import app from '../dist/api/index.js';
 
-module.exports = async (req, res) => {
-  return app.fetch({
-    method: req.method,
-    url: `http://${req.headers.host}${req.url}`,
-    headers: req.headers,
-    body: req.body,
-  }).then(response => {
+export default async (req, res) => {
+  try {
+    const response = await app.fetch(req);
+    
     res.status(response.status);
     for (const [key, value] of response.headers) {
       res.setHeader(key, value);
     }
-    return response.text().then(body => res.send(body));
-  });
+    
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('API Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
