@@ -2,22 +2,27 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import app from '../src/api/index';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
-  return app.fetch(
-    new Request(new URL(req.url || '/', `http://${req.headers.host}`), {
-      method: req.method,
-      headers: req.headers as any,
-      body: ['GET', 'HEAD'].includes(req.method || '') ? undefined : req.body,
-    })
-  )
-    .then(async (response) => {
-      res.status(response.status);
-      response.headers.forEach((value, key) => {
-        res.setHeader(key, value);
-      });
-      res.send(await response.text());
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ error: 'Internal Error' });
-    });
+  try {
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    
+    const response = await app.fetch(
+      new Request(url, {
+        method: req.method || 'GET',
+        headers: new Headers(req.headers as Record<string, string>),
+        body: req.body ? JSON.stringify(req.body) : undefined,
+      })
+    );
+
+    res.status(response.status);
+    
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
