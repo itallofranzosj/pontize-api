@@ -179,12 +179,6 @@ relatoriosRouter.get("/producao", zValidator("query", PeriodoSchema), async (c) 
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const { data: userProfile } = await supabase
-      .from("profiles")
-      .select("empresa_id")
-      .eq("id", authedUser.id)
-      .single();
-
     const inicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
     const ultimoDia = new Date(ano, mes, 0).getDate();
     const fim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
