@@ -1,17 +1,20 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
-export const colaboradoresRouter = new Hono();
-const QuerySchema = z.object({
-    empresa_id: z.string().uuid().optional(),
-    setor_id: z.string().uuid().optional(),
-    ativo: z.enum(["true", "false"]).transform(Boolean).optional(),
-    limit: z.string().default("100").transform(Number),
-    offset: z.string().default("0").transform(Number),
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.colaboradoresRouter = void 0;
+const hono_1 = require("hono");
+const zod_validator_1 = require("@hono/zod-validator");
+const zod_1 = require("zod");
+const client_server_1 = require("../../integrations/supabase/client.server");
+exports.colaboradoresRouter = new hono_1.Hono();
+const QuerySchema = zod_1.z.object({
+    empresa_id: zod_1.z.string().uuid().optional(),
+    setor_id: zod_1.z.string().uuid().optional(),
+    ativo: zod_1.z.enum(["true", "false"]).transform(Boolean).optional(),
+    limit: zod_1.z.string().default("100").transform(Number),
+    offset: zod_1.z.string().default("0").transform(Number),
 });
 // GET /v1/colaboradores - Listar colaboradores
-colaboradoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
+exports.colaboradoresRouter.get("/", (0, zod_validator_1.zValidator)("query", QuerySchema), async (c) => {
     const { empresa_id, setor_id, ativo, limit, offset } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
@@ -19,7 +22,7 @@ colaboradoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
             return c.json({ error: "Unauthorized" }, 401);
         }
         // Obter empresa do usuário autenticado
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
@@ -29,7 +32,7 @@ colaboradoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
         if (!targetEmpresa) {
             return c.json({ error: "User empresa_id not found" }, 400);
         }
-        let query = supabase
+        let query = client_server_1.supabaseAdmin
             .from("profiles")
             .select("id, nome, cpf, matricula, cargo, setor_id, empresa_id, ativo, data_admissao");
         query = query.eq("empresa_id", targetEmpresa);
@@ -59,19 +62,19 @@ colaboradoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
     }
 });
 // GET /v1/colaboradores/:id - Obter colaborador específico
-colaboradoresRouter.get("/:id", async (c) => {
+exports.colaboradoresRouter.get("/:id", async (c) => {
     const id = c.req.param("id");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
             .single();
-        const { data, error } = await supabase
+        const { data, error } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("id, nome, cpf, matricula, cargo, setor_id, empresa_id, ativo, data_admissao, created_at")
             .eq("id", id)
@@ -90,7 +93,7 @@ colaboradoresRouter.get("/:id", async (c) => {
     }
 });
 // GET /v1/colaboradores/:id/marcacoes - Marcações de um colaborador
-colaboradoresRouter.get("/:id/marcacoes", async (c) => {
+exports.colaboradoresRouter.get("/:id/marcacoes", async (c) => {
     const id = c.req.param("id");
     const { mes, ano } = c.req.query();
     const authedUser = c.get("user");
@@ -98,12 +101,12 @@ colaboradoresRouter.get("/:id/marcacoes", async (c) => {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
             .single();
-        const { data: colab } = await supabase
+        const { data: colab } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", id)
@@ -116,7 +119,7 @@ colaboradoresRouter.get("/:id/marcacoes", async (c) => {
         const inicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
         const ultimoDia = new Date(parseInt(ano), parseInt(mes), 0).getDate();
         const fim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
-        const { data, error } = await supabase
+        const { data, error } = await client_server_1.supabaseAdmin
             .from("marcacoes")
             .select("*")
             .eq("user_id", id)

@@ -1,5 +1,5 @@
 import { Context, MiddlewareHandler } from "hono";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "../../integrations/supabase/client.server";
 
 export type HonoEnv = {
   Variables: {

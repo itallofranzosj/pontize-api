@@ -1,20 +1,23 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
-export const authRouter = new Hono();
-const LoginSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authRouter = void 0;
+const hono_1 = require("hono");
+const zod_validator_1 = require("@hono/zod-validator");
+const zod_1 = require("zod");
+const client_server_1 = require("../../integrations/supabase/client.server");
+exports.authRouter = new hono_1.Hono();
+const LoginSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(6),
 });
-const RefreshSchema = z.object({
-    refresh_token: z.string(),
+const RefreshSchema = zod_1.z.object({
+    refresh_token: zod_1.z.string(),
 });
 // POST /auth/login - Login com email e senha
-authRouter.post("/login", zValidator("json", LoginSchema), async (c) => {
+exports.authRouter.post("/login", (0, zod_validator_1.zValidator)("json", LoginSchema), async (c) => {
     const { email, password } = c.req.valid("json");
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await client_server_1.supabaseAdmin.auth.signInWithPassword({
             email,
             password,
         });
@@ -42,14 +45,14 @@ authRouter.post("/login", zValidator("json", LoginSchema), async (c) => {
     }
 });
 // POST /auth/logout - Logout (revoke token)
-authRouter.post("/logout", async (c) => {
+exports.authRouter.post("/logout", async (c) => {
     const authHeader = c.req.header("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
         return c.json({ ok: true }, 200);
     }
     try {
         const token = authHeader.slice(7);
-        await supabase.auth.admin.signOut(token);
+        await client_server_1.supabaseAdmin.auth.admin.signOut(token);
         return c.json({
             ok: true,
             message: "Logged out successfully",
@@ -64,10 +67,10 @@ authRouter.post("/logout", async (c) => {
     }
 });
 // POST /auth/refresh - Refresh token
-authRouter.post("/refresh", zValidator("json", RefreshSchema), async (c) => {
+exports.authRouter.post("/refresh", (0, zod_validator_1.zValidator)("json", RefreshSchema), async (c) => {
     const { refresh_token } = c.req.valid("json");
     try {
-        const { data, error } = await supabase.auth.refreshSession({
+        const { data, error } = await client_server_1.supabaseAdmin.auth.refreshSession({
             refresh_token,
         });
         if (error || !data.session) {
@@ -90,7 +93,7 @@ authRouter.post("/refresh", zValidator("json", RefreshSchema), async (c) => {
     }
 });
 // GET /auth/verify - Verify token validity
-authRouter.get("/verify", async (c) => {
+exports.authRouter.get("/verify", async (c) => {
     const authHeader = c.req.header("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
         return c.json({
@@ -100,7 +103,7 @@ authRouter.get("/verify", async (c) => {
     }
     try {
         const token = authHeader.slice(7);
-        const { data, error } = await supabase.auth.getUser(token);
+        const { data, error } = await client_server_1.supabaseAdmin.auth.getUser(token);
         if (error || !data.user) {
             return c.json({
                 ok: false,

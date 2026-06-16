@@ -1,29 +1,32 @@
-import { Hono } from "hono";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
-export const relatoriosRouter = new Hono();
-const PeriodoSchema = z.object({
-    mes: z
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.relatoriosRouter = void 0;
+const hono_1 = require("hono");
+const zod_1 = require("zod");
+const zod_validator_1 = require("@hono/zod-validator");
+const client_server_1 = require("../../integrations/supabase/client.server");
+exports.relatoriosRouter = new hono_1.Hono();
+const PeriodoSchema = zod_1.z.object({
+    mes: zod_1.z
         .string()
         .regex(/^\d{1,2}$/)
         .transform(Number),
-    ano: z
+    ano: zod_1.z
         .string()
         .regex(/^\d{4}$/)
         .transform(Number),
-    user_id: z.string().uuid().optional(),
-    setor_id: z.string().uuid().optional(),
+    user_id: zod_1.z.string().uuid().optional(),
+    setor_id: zod_1.z.string().uuid().optional(),
 });
 // GET /v1/relatorios/horas-mes - Relatório de horas por mês
-relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c) => {
+exports.relatoriosRouter.get("/horas-mes", (0, zod_validator_1.zValidator)("query", PeriodoSchema), async (c) => {
     const { mes, ano, user_id, setor_id } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
@@ -35,7 +38,7 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
         const inicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
         const ultimoDia = new Date(ano, mes, 0).getDate();
         const fim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
-        let query = supabase
+        let query = client_server_1.supabaseAdmin
             .from("marcacoes")
             .select("user_id, marcada_em")
             .gte("marcada_em", inicio)
@@ -47,7 +50,7 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
         // Se filtrar por setor, precisamos de colaboradores
         let targetUsers = [];
         if (setor_id) {
-            const { data: colabs } = await supabase
+            const { data: colabs } = await client_server_1.supabaseAdmin
                 .from("profiles")
                 .select("id")
                 .eq("setor_id", setor_id)
@@ -55,7 +58,7 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
             targetUsers = colabs?.map((c) => c.id) || [];
         }
         else if (!user_id) {
-            const { data: colabs } = await supabase
+            const { data: colabs } = await client_server_1.supabaseAdmin
                 .from("profiles")
                 .select("id")
                 .eq("empresa_id", userProfile.empresa_id);
@@ -85,14 +88,14 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
     }
 });
 // GET /v1/relatorios/comparecimento - Relatório de comparecimento
-relatoriosRouter.get("/comparecimento", zValidator("query", PeriodoSchema), async (c) => {
+exports.relatoriosRouter.get("/comparecimento", (0, zod_validator_1.zValidator)("query", PeriodoSchema), async (c) => {
     const { mes, ano, setor_id } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
@@ -101,7 +104,7 @@ relatoriosRouter.get("/comparecimento", zValidator("query", PeriodoSchema), asyn
             return c.json({ error: "User empresa_id not found" }, 400);
         }
         // Buscar colaboradores
-        let query = supabase
+        let query = client_server_1.supabaseAdmin
             .from("profiles")
             .select("id, nome, matricula, setor_id")
             .eq("empresa_id", userProfile.empresa_id)
@@ -143,7 +146,7 @@ relatoriosRouter.get("/comparecimento", zValidator("query", PeriodoSchema), asyn
     }
 });
 // GET /v1/relatorios/producao - Relatório de produtividade
-relatoriosRouter.get("/producao", zValidator("query", PeriodoSchema), async (c) => {
+exports.relatoriosRouter.get("/producao", (0, zod_validator_1.zValidator)("query", PeriodoSchema), async (c) => {
     const { mes, ano, setor_id } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
@@ -154,7 +157,7 @@ relatoriosRouter.get("/producao", zValidator("query", PeriodoSchema), async (c) 
         const ultimoDia = new Date(ano, mes, 0).getDate();
         const fim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
         // Buscar marcações
-        const query = supabase
+        const query = client_server_1.supabaseAdmin
             .from("marcacoes")
             .select("user_id, marcada_em")
             .gte("marcada_em", inicio)
@@ -163,7 +166,7 @@ relatoriosRouter.get("/producao", zValidator("query", PeriodoSchema), async (c) 
         // Se setor_id, filtrar por setor
         let colaboradoresSetor = [];
         if (setor_id) {
-            const { data: colabs } = await supabase
+            const { data: colabs } = await client_server_1.supabaseAdmin
                 .from("profiles")
                 .select("id")
                 .eq("setor_id", setor_id);

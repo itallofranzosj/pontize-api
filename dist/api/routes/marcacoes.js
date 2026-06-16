@@ -1,32 +1,35 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
-export const marcacoesRouter = new Hono();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.marcacoesRouter = void 0;
+const hono_1 = require("hono");
+const zod_validator_1 = require("@hono/zod-validator");
+const zod_1 = require("zod");
+const client_server_1 = require("../../integrations/supabase/client.server");
+exports.marcacoesRouter = new hono_1.Hono();
 // Schemas
-const MarcacaoSchema = z.object({
-    user_id: z.string().uuid(),
-    marcada_em: z.string().datetime(),
-    tipo: z.enum(["entrada", "saida", "saida_intervalo", "volta_intervalo"]),
-    motivo_alteracao: z.string().optional(),
+const MarcacaoSchema = zod_1.z.object({
+    user_id: zod_1.z.string().uuid(),
+    marcada_em: zod_1.z.string().datetime(),
+    tipo: zod_1.z.enum(["entrada", "saida", "saida_intervalo", "volta_intervalo"]),
+    motivo_alteracao: zod_1.z.string().optional(),
 });
-const QuerySchema = z.object({
-    user_id: z.string().uuid().optional(),
-    empresa_id: z.string().uuid().optional(),
-    data_inicio: z.string().datetime().optional(),
-    data_fim: z.string().datetime().optional(),
-    limit: z.string().default("100").transform(Number),
-    offset: z.string().default("0").transform(Number),
+const QuerySchema = zod_1.z.object({
+    user_id: zod_1.z.string().uuid().optional(),
+    empresa_id: zod_1.z.string().uuid().optional(),
+    data_inicio: zod_1.z.string().datetime().optional(),
+    data_fim: zod_1.z.string().datetime().optional(),
+    limit: zod_1.z.string().default("100").transform(Number),
+    offset: zod_1.z.string().default("0").transform(Number),
 });
 // GET /v1/marcacoes - Listar marcações
-marcacoesRouter.get("/", zValidator("query", QuerySchema), async (c) => {
+exports.marcacoesRouter.get("/", (0, zod_validator_1.zValidator)("query", QuerySchema), async (c) => {
     const { user_id, empresa_id, data_inicio, data_fim, limit, offset } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        let query = supabase.from("marcacoes").select("*");
+        let query = client_server_1.supabaseAdmin.from("marcacoes").select("*");
         // Filtrar por empresa (se fornecido) ou usuário
         if (empresa_id) {
             query = query.eq("empresa_id", empresa_id);
@@ -63,7 +66,7 @@ marcacoesRouter.get("/", zValidator("query", QuerySchema), async (c) => {
     }
 });
 // POST /v1/marcacoes - Criar marcação
-marcacoesRouter.post("/", zValidator("json", MarcacaoSchema), async (c) => {
+exports.marcacoesRouter.post("/", (0, zod_validator_1.zValidator)("json", MarcacaoSchema), async (c) => {
     const payload = c.req.valid("json");
     const authedUser = c.get("user");
     // Validar que user_id pertence ao usuário autenticado
@@ -71,7 +74,7 @@ marcacoesRouter.post("/", zValidator("json", MarcacaoSchema), async (c) => {
         return c.json({ error: "Forbidden" }, 403);
     }
     try {
-        const { data, error } = await supabase.from("marcacoes").insert([payload]).select().single();
+        const { data, error } = await client_server_1.supabaseAdmin.from("marcacoes").insert([payload]).select().single();
         if (error) {
             return c.json({ error: error.message }, 400);
         }
@@ -82,11 +85,11 @@ marcacoesRouter.post("/", zValidator("json", MarcacaoSchema), async (c) => {
     }
 });
 // GET /v1/marcacoes/:id - Obter marcação específica
-marcacoesRouter.get("/:id", async (c) => {
+exports.marcacoesRouter.get("/:id", async (c) => {
     const id = c.req.param("id");
     const authedUser = c.get("user");
     try {
-        const { data, error } = await supabase.from("marcacoes").select("*").eq("id", id).single();
+        const { data, error } = await client_server_1.supabaseAdmin.from("marcacoes").select("*").eq("id", id).single();
         if (error || !data) {
             return c.json({ error: "Not found" }, 404);
         }
@@ -101,13 +104,13 @@ marcacoesRouter.get("/:id", async (c) => {
     }
 });
 // PUT /v1/marcacoes/:id - Atualizar marcação
-marcacoesRouter.put("/:id", zValidator("json", MarcacaoSchema.partial()), async (c) => {
+exports.marcacoesRouter.put("/:id", (0, zod_validator_1.zValidator)("json", MarcacaoSchema.partial()), async (c) => {
     const id = c.req.param("id");
     const payload = c.req.valid("json");
     const authedUser = c.get("user");
     try {
         // Obter marcação original
-        const { data: original } = await supabase.from("marcacoes").select("*").eq("id", id).single();
+        const { data: original } = await client_server_1.supabaseAdmin.from("marcacoes").select("*").eq("id", id).single();
         if (!original) {
             return c.json({ error: "Not found" }, 404);
         }
@@ -115,7 +118,7 @@ marcacoesRouter.put("/:id", zValidator("json", MarcacaoSchema.partial()), async 
         if (!authedUser?.id || original.user_id !== authedUser.id) {
             return c.json({ error: "Forbidden" }, 403);
         }
-        const { data, error } = await supabase
+        const { data, error } = await client_server_1.supabaseAdmin
             .from("marcacoes")
             .update(payload)
             .eq("id", id)
@@ -131,12 +134,12 @@ marcacoesRouter.put("/:id", zValidator("json", MarcacaoSchema.partial()), async 
     }
 });
 // DELETE /v1/marcacoes/:id - Deletar marcação
-marcacoesRouter.delete("/:id", async (c) => {
+exports.marcacoesRouter.delete("/:id", async (c) => {
     const id = c.req.param("id");
     const authedUser = c.get("user");
     try {
         // Obter marcação original
-        const { data: original } = await supabase.from("marcacoes").select("*").eq("id", id).single();
+        const { data: original } = await client_server_1.supabaseAdmin.from("marcacoes").select("*").eq("id", id).single();
         if (!original) {
             return c.json({ error: "Not found" }, 404);
         }
@@ -144,7 +147,7 @@ marcacoesRouter.delete("/:id", async (c) => {
         if (!authedUser?.id || original.user_id !== authedUser.id) {
             return c.json({ error: "Forbidden" }, 403);
         }
-        const { error } = await supabase.from("marcacoes").delete().eq("id", id);
+        const { error } = await client_server_1.supabaseAdmin.from("marcacoes").delete().eq("id", id);
         if (error) {
             return c.json({ error: error.message }, 400);
         }

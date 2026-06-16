@@ -1,7 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.supabaseAdmin = void 0;
+const supabase_js_1 = require("@supabase/supabase-js");
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+exports.supabaseAdmin = (0, supabase_js_1.createClient)(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false,

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
+import { supabaseAdmin as supabase } from "../../integrations/supabase/client.server";
 import type { HonoEnv } from "../middleware/auth";
 
 export const authRouter = new Hono<HonoEnv>();

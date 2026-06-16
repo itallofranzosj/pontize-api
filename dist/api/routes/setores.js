@@ -1,22 +1,25 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
-export const setoresRouter = new Hono();
-const QuerySchema = z.object({
-    empresa_id: z.string().uuid().optional(),
-    limit: z.string().default("100").transform(Number),
-    offset: z.string().default("0").transform(Number),
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setoresRouter = void 0;
+const hono_1 = require("hono");
+const zod_validator_1 = require("@hono/zod-validator");
+const zod_1 = require("zod");
+const client_server_1 = require("../../integrations/supabase/client.server");
+exports.setoresRouter = new hono_1.Hono();
+const QuerySchema = zod_1.z.object({
+    empresa_id: zod_1.z.string().uuid().optional(),
+    limit: zod_1.z.string().default("100").transform(Number),
+    offset: zod_1.z.string().default("0").transform(Number),
 });
 // GET /v1/setores - Listar setores
-setoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
+exports.setoresRouter.get("/", (0, zod_validator_1.zValidator)("query", QuerySchema), async (c) => {
     const { empresa_id, limit, offset } = c.req.valid("query");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
@@ -25,7 +28,7 @@ setoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
         if (!targetEmpresa) {
             return c.json({ error: "User empresa_id not found" }, 400);
         }
-        let query = supabase
+        let query = client_server_1.supabaseAdmin
             .from("setores")
             .select("id, empresa_id, departamento_id, nome, codigo, responsavel_id, ativo");
         query = query.eq("empresa_id", targetEmpresa);
@@ -49,19 +52,19 @@ setoresRouter.get("/", zValidator("query", QuerySchema), async (c) => {
     }
 });
 // GET /v1/setores/:id - Obter setor específico
-setoresRouter.get("/:id", async (c) => {
+exports.setoresRouter.get("/:id", async (c) => {
     const id = c.req.param("id");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
             .single();
-        const { data, error } = await supabase.from("setores").select("*").eq("id", id).single();
+        const { data, error } = await client_server_1.supabaseAdmin.from("setores").select("*").eq("id", id).single();
         if (error || !data) {
             return c.json({ error: "Not found" }, 404);
         }
@@ -76,19 +79,19 @@ setoresRouter.get("/:id", async (c) => {
     }
 });
 // GET /v1/setores/:id/colaboradores - Colaboradores de um setor
-setoresRouter.get("/:id/colaboradores", async (c) => {
+exports.setoresRouter.get("/:id/colaboradores", async (c) => {
     const id = c.req.param("id");
     const authedUser = c.get("user");
     try {
         if (!authedUser?.id) {
             return c.json({ error: "Unauthorized" }, 401);
         }
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("empresa_id")
             .eq("id", authedUser.id)
             .single();
-        const { data: setor } = await supabase
+        const { data: setor } = await client_server_1.supabaseAdmin
             .from("setores")
             .select("empresa_id")
             .eq("id", id)
@@ -97,7 +100,7 @@ setoresRouter.get("/:id/colaboradores", async (c) => {
         if (!userProfile?.empresa_id || setor?.empresa_id !== userProfile.empresa_id) {
             return c.json({ error: "Forbidden" }, 403);
         }
-        const { data, error } = await supabase
+        const { data, error } = await client_server_1.supabaseAdmin
             .from("profiles")
             .select("id, nome, matricula, cargo, ativo")
             .eq("setor_id", id)
