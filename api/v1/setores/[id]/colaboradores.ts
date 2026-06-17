@@ -2,10 +2,10 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const { id } = req.query;
-    const { default: app } = await import('../dist/api/index.js');
+    const { default: app } = await import('../../../dist/api/index.js');
     const response = await app.fetch(
-      new Request(`https://api.pontize.com/v1/colaboradores/${id}`, {
-        method: req.method || 'GET',
+      new Request(`https://api.pontize.com/v1/setores/${id}/colaboradores`, {
+        method: 'GET',
         headers: new Headers(req.headers as Record<string, string>),
       })
     );
