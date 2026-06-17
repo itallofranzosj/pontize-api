@@ -3,8 +3,10 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { authMiddleware } from "./middleware/auth";
 import { authRouter } from "./routes/auth";
+import { mfaRouter } from "./routes/mfa";
 import { marcacoesRouter } from "./routes/marcacoes";
 import { colaboradoresRouter } from "./routes/colaboradores";
+import { dispositivosRouter } from "./routes/dispositivos";
 import { relatoriosRouter } from "./routes/relatorios";
 import { setoresRouter } from "./routes/setores";
 import { healthRouter } from "./routes/health";
@@ -22,10 +24,12 @@ app.route("/health", healthRouter);
 
 // Auth Routes (público)
 app.route("/auth", authRouter);
+app.route("/auth/mfa", mfaRouter);
 
 // API Routes (protegidas)
 app.route("/v1/marcacoes", marcacoesRouter);
 app.route("/v1/colaboradores", colaboradoresRouter);
+app.route("/v1/dispositivos", dispositivosRouter);
 app.route("/v1/relatorios", relatoriosRouter);
 app.route("/v1/setores", setoresRouter);
 
