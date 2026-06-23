@@ -1,9 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
-    const { default: app } = await import('../../../dist/api/index.js');
+    const { default: app } = await import('../../dist/api/index.js');
     const response = await app.fetch(
-      new Request('https://api.pontize.com/auth/mfa/send', {
+      new Request('https://api.pontize.com/auth/login', {
         method: 'POST',
         headers: new Headers(req.headers as Record<string, string>),
         body: req.body ? JSON.stringify(req.body) : undefined,
