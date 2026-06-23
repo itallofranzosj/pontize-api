@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const queryStr = req.url?.split('?')[1] || '';
-    const { default: app } = await import('../../dist/api/index.js');
+    const { default: app } = await import('../../../dist/api/index.js');
     const response = await app.fetch(
       new Request(`https://api.pontize.com/v1/relatorios/comparecimento?${queryStr}`, {
         method: 'GET',
