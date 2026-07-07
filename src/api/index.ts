@@ -8,6 +8,7 @@ import { marcacoesRouter } from "./routes/marcacoes";
 import { colaboradoresRouter } from "./routes/colaboradores";
 import { dispositivosRouter } from "./routes/dispositivos";
 import { repDevicesRouter } from "./routes/rep-devices";
+import { unidadesRouter } from "./routes/unidades";
 import { relatoriosRouter } from "./routes/relatorios";
 import { setoresRouter } from "./routes/setores";
 import { healthRouter } from "./routes/health";
@@ -32,6 +33,7 @@ app.route("/v1/marcacoes", marcacoesRouter);
 app.route("/v1/colaboradores", colaboradoresRouter);
 app.route("/v1/dispositivos", dispositivosRouter);
 app.route("/v1/rep-devices", repDevicesRouter);
+app.route("/v1/unidades", unidadesRouter);
 app.route("/v1/relatorios", relatoriosRouter);
 app.route("/v1/setores", setoresRouter);
 

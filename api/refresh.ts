@@ -1,18 +1,16 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// GET (listar) e POST (cadastrar) relógios — usado pelo Pontize Agent (Windows).
+// POST /api/refresh — renova o access_token via refresh_token.
+// Usado pelo Pontize Agent (Windows): sem esta rota a sessão do agente
+// expirava em ~1h e o usuário era mandado de volta pro login.
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const { default: app } = await import('../dist/api/index.js');
-    const queryStr = req.url?.split('?')[1] || '';
-    const method = req.method || 'GET';
     const response = await app.fetch(
-      new Request(`https://api.pontize.com/v1/rep-devices?${queryStr}`, {
-        method,
+      new Request('https://api.pontize.com/auth/refresh', {
+        method: 'POST',
         headers: new Headers(req.headers as Record<string, string>),
-        body: method !== 'GET' && method !== 'HEAD' && req.body
-          ? JSON.stringify(req.body)
-          : undefined,
+        body: req.body ? JSON.stringify(req.body) : undefined,
       })
     );
     res.status(response.status).send(await response.text());
