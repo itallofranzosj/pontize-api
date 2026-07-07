@@ -1,56 +1,156 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 import { supabaseAdmin as supabase } from "../../integrations/supabase/client.server";
 import type { HonoEnv } from "../middleware/auth";
 
 export const repDevicesRouter = new Hono<HonoEnv>();
 
-// GET /v1/rep-devices — lista os REPs de ponto da empresa do usuário autenticado
+const DEVICE_COLUMNS =
+  "id, identificador, ip_local, fabricante, modelo, numero_serie, tipo_rep, unidade_id, ativo, ingest_enabled";
+
+async function resolveEmpresaId(authedUserId: string) {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("empresa_id")
+    .eq("id", authedUserId)
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+  if (!profile?.empresa_id) return { error: "Usuário sem empresa vinculada" };
+  return { empresaId: profile.empresa_id };
+}
+
+// GET /v1/rep-devices - Lista os REPs de ponto da empresa do usuário autenticado
+// Usado pelo Pontize Agent (Windows) para exibir a lista de relógios na instalação.
 repDevicesRouter.get("/", async (c) => {
   const authedUser = c.get("user");
-
   if (!authedUser?.id) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
+  const resolved = await resolveEmpresaId(authedUser.id);
+  if ("error" in resolved) {
+    return c.json({ error: resolved.error }, 400);
+  }
+
   try {
-    // Buscar a empresa do usuário via profiles
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("empresa_id")
-      .eq("id", authedUser.id)
-      .single();
-
-    if (profileError || !profile?.empresa_id) {
-      // Fallback: retornar REPs acessíveis sem filtro de empresa
-      // (segurança garantida pelo RLS se configurado corretamente)
-      const { data, error } = await supabase
-        .from("rep_devices")
-        .select("id, identificador, ip_local, fabricante, modelo, tipo, numero_serie, ativo, ingest_enabled")
-        .eq("ativo", true)
-        .order("identificador", { ascending: true });
-
-      if (error) {
-        return c.json({ error: error.message }, 400);
-      }
-
-      return c.json({ ok: true, data: data || [], count: (data || []).length });
-    }
-
-    // Filtrar por empresa do usuário
     const { data, error } = await supabase
       .from("rep_devices")
-      .select("id, identificador, ip_local, fabricante, modelo, tipo, numero_serie, ativo, ingest_enabled")
-      .eq("empresa_id", profile.empresa_id)
-      .eq("ativo", true)
-      .order("identificador", { ascending: true });
+      .select(DEVICE_COLUMNS)
+      .eq("empresa_id", resolved.empresaId)
+      .order("updated_at", { ascending: false });
 
     if (error) {
       return c.json({ error: error.message }, 400);
     }
 
-    return c.json({ ok: true, data: data || [], count: (data || []).length });
-  } catch (err) {
-    console.error("[rep-devices] Erro:", err);
+    return c.json({ ok: true, data: data ?? [], count: data?.length ?? 0 });
+  } catch (error) {
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+const CreateDeviceSchema = z.object({
+  identificador: z.string().min(1),
+  fabricante: z.string().min(1),
+  modelo: z.string().min(1),
+  tipo_rep: z.string().min(1),
+  ip_local: z.string().min(1).optional(),
+  numero_serie: z.string().optional(),
+  unidade_id: z.string().uuid().optional(),
+});
+
+// POST /v1/rep-devices - Cadastra um novo relógio de ponto (REP) para a empresa.
+// Usuário/senha do relógio NÃO são aceitos aqui — ficam só no PC do Agente,
+// nunca trafegam para o Pontize. Segue a mesma convenção usada pelo cadastro
+// manual no app web (CadastrarRepDialog em app.rep.tsx): nr_id_estab/tipo_id_estab
+// não são resolvidos de fato hoje (mesma limitação já existente lá).
+repDevicesRouter.post("/", zValidator("json", CreateDeviceSchema), async (c) => {
+  const authedUser = c.get("user");
+  if (!authedUser?.id) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const resolved = await resolveEmpresaId(authedUser.id);
+  if ("error" in resolved) {
+    return c.json({ error: resolved.error }, 400);
+  }
+
+  const payload = c.req.valid("json");
+
+  try {
+    const { data, error } = await supabase
+      .from("rep_devices")
+      .insert({
+        empresa_id: resolved.empresaId,
+        identificador: payload.identificador.toUpperCase(),
+        fabricante: payload.fabricante,
+        modelo: payload.modelo,
+        tipo_rep: payload.tipo_rep,
+        ip_local: payload.ip_local ?? null,
+        numero_serie: payload.numero_serie ?? null,
+        unidade_id: payload.unidade_id ?? null,
+        nr_id_estab: "",
+        tipo_id_estab: 1,
+        ativo: true,
+        ingest_enabled: true,
+      })
+      .select(DEVICE_COLUMNS)
+      .single();
+
+    if (error) {
+      return c.json({ error: error.message }, 400);
+    }
+
+    return c.json({ ok: true, data }, 201);
+  } catch (error) {
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+const UpdateDeviceSchema = z
+  .object({
+    unidade_id: z.string().uuid().nullable().optional(),
+    ativo: z.boolean().optional(),
+    ingest_enabled: z.boolean().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "Nada para atualizar" });
+
+// PATCH /v1/rep-devices/:id - Atualiza vínculo de unidade / status de um relógio.
+repDevicesRouter.patch("/:id", zValidator("json", UpdateDeviceSchema), async (c) => {
+  const authedUser = c.get("user");
+  if (!authedUser?.id) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const resolved = await resolveEmpresaId(authedUser.id);
+  if ("error" in resolved) {
+    return c.json({ error: resolved.error }, 400);
+  }
+
+  const id = c.req.param("id");
+  const payload = c.req.valid("json");
+
+  try {
+    const { data, error } = await supabase
+      .from("rep_devices")
+      .update(payload)
+      .eq("id", id)
+      .eq("empresa_id", resolved.empresaId)
+      .select(DEVICE_COLUMNS)
+      .maybeSingle();
+
+    if (error) {
+      return c.json({ error: error.message }, 400);
+    }
+
+    if (!data) {
+      return c.json({ error: "Relógio não encontrado" }, 404);
+    }
+
+    return c.json({ ok: true, data });
+  } catch (error) {
     return c.json({ error: "Internal server error" }, 500);
   }
 });
