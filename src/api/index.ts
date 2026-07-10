@@ -12,6 +12,24 @@ import { unidadesRouter } from "./routes/unidades";
 import { relatoriosRouter } from "./routes/relatorios";
 import { setoresRouter } from "./routes/setores";
 import { healthRouter } from "./routes/health";
+import { configRouter } from "./routes/config";
+import { jornadasRouter } from "./routes/jornadas";
+import { horariosRouter } from "./routes/horarios";
+import { feriadosRouter } from "./routes/feriados";
+import { alertasRouter } from "./routes/alertas";
+import { localizacaoRouter } from "./routes/localizacao";
+import { perfisJornadaRouter } from "./routes/perfis-jornada";
+import { tiposAfastamentoRouter } from "./routes/tipos-afastamento";
+import { afastamentosRouter } from "./routes/afastamentos";
+import { ocorrenciasRouter } from "./routes/ocorrencias";
+import { operacoesRouter } from "./routes/operacoes";
+import { bancoHorasRouter } from "./routes/banco-horas";
+import { relatorioCltRouter } from "./routes/relatorios-clt";
+import { marcacaoValidadaRouter } from "./routes/marcacao-validada";
+import { meuPerfilRouter } from "./routes/meu-perfil";
+import { justificativasRouter } from "./routes/justificativas";
+import { exportacaoRouter } from "./routes/exportacao";
+import { permissoesRouter } from "./routes/permissoes";
 
 const app = new Hono();
 
@@ -36,6 +54,40 @@ app.route("/v1/rep-devices", repDevicesRouter);
 app.route("/v1/unidades", unidadesRouter);
 app.route("/v1/relatorios", relatoriosRouter);
 app.route("/v1/setores", setoresRouter);
+
+// Configurações CLT (Fase 1)
+app.route("/v1/config", configRouter);
+app.route("/v1/jornadas", jornadasRouter);
+app.route("/v1/horarios-trabalho", horariosRouter);
+app.route("/v1/dias-uteis", feriadosRouter);
+app.route("/v1/alertas-config", alertasRouter);
+app.route("/v1/localizacao-config", localizacaoRouter);
+app.route("/v1/perfis-jornada", perfisJornadaRouter);
+
+// Gestão de Colaborador (Fase 2)
+app.route("/v1/tipos-afastamento", tiposAfastamentoRouter);
+app.route("/v1/afastamentos", afastamentosRouter);
+app.route("/v1/ocorrencias", ocorrenciasRouter);
+
+// Operações Críticas (Fase 3)
+app.route("/v1/operacoes", operacoesRouter);
+
+// Banco de Horas (Fase 4)
+app.route("/v1/banco-horas", bancoHorasRouter);
+
+// Relatórios Avançados (Fase 5)
+app.route("/v1/relatorios-clt", relatorioCltRouter);
+
+// App Trabalhador (Fase 6)
+app.route("/v1/marcacao-validada", marcacaoValidadaRouter);
+app.route("/v1/meu-perfil", meuPerfilRouter);
+app.route("/v1/justificativas", justificativasRouter);
+
+// Exportação & Integração (Fase 7)
+app.route("/v1/exportacao", exportacaoRouter);
+
+// Auditoria & Security (Fase 8)
+app.route("/v1/permissoes", permissoesRouter);
 
 // Error handling
 app.onError((err, c) => {
