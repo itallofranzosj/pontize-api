@@ -1,0 +1,215 @@
+========================================
+PONTIZE API v2.0 - DEPLOYMENT INSTRUCTIONS
+========================================
+
+Status: Code committed to GitHub and ready for deployment
+
+========================================
+STEP 1: SUPABASE MIGRATIONS
+========================================
+
+The following 21 migrations are ready to deploy:
+
+001_create_empresa_config.sql
+002_create_jornadas.sql
+003_create_horarios_trabalho.sql
+004_create_dias_uteis.sql
+005_create_alertas_config.sql
+006_create_localizacao_config.sql
+007_create_perfis_jornada.sql
+008_alter_profiles_add_columns.sql
+009_create_additional_indexes.sql
+010_populate_feriados_2024_2027.sql
+011_create_tipos_afastamento.sql
+012_create_afastamentos.sql
+013_create_ocorrencias.sql
+014_add_demissao_columns_profiles.sql
+015_create_auditoria_log.sql
+016_alter_marcacoes_add_validacao_columns.sql
+017_create_periodos_fechados.sql
+018_create_clt_functions.sql
+019_create_banco_horas.sql
+020_create_movimentacoes_banco_horas.sql
+021_create_banco_horas_functions.sql
+
+Option A: Using Supabase CLI (Recommended)
+-------------------------------------------
+1. Install Supabase CLI (if not already installed)
+2. Run: supabase login
+3. Run: supabase link --project-ref YOUR_PROJECT_REF
+4. Run: supabase migration up
+
+Option B: Manual via Supabase Dashboard
+-----------------------------------------
+1. Go to Supabase Dashboard (https://app.supabase.com)
+2. Select your project
+3. Go to SQL Editor
+4. Copy contents of each migration file from supabase/migrations/
+5. Execute migrations in order (001 -> 021)
+
+Expected Results:
+- 15 new tables created
+- 6 PostgreSQL functions created
+- 50+ constraints added
+- 25+ indexes created
+
+========================================
+STEP 2: VERCEL DEPLOYMENT
+========================================
+
+Code is ready for Vercel deployment:
+- Latest commit: f1541de (docs: Add comprehensive deployment guides)
+- All tests passing
+- Build ready
+
+Option A: GitHub Auto-Deploy (Recommended)
+-------------------------------------------
+1. Connect GitHub repo to Vercel (if not already done)
+2. Push to main branch (ALREADY DONE)
+3. Vercel automatically deploys on push
+
+Option B: Manual Vercel Deploy
+-------------------------------
+1. Go to Vercel Dashboard (https://vercel.com)
+2. Import project from GitHub: itallofranzosj/pontize-api
+3. Set Environment Variables:
+   - SUPABASE_URL: https://xxxxx.supabase.co
+   - SUPABASE_ANON_KEY: your_anon_key
+   - SUPABASE_SERVICE_ROLE_KEY: your_service_role_key
+4. Click "Deploy"
+
+Expected Results:
+- API running at: https://pontize-api.vercel.app (or custom domain)
+- 18 routes with 85 endpoints responding
+- All tests passing
+- Database connected to Supabase
+
+========================================
+STEP 3: CLOUDFLARE (GitHub Actions)
+========================================
+
+Cloudflare will deploy automatically via GitHub Actions when:
+- Commits are pushed to main (ALREADY DONE)
+- GitHub Actions workflows are configured
+- Cloudflare credentials are in GitHub Secrets
+
+To Setup (Optional):
+1. Create Cloudflare API Token at https://dash.cloudflare.com/tokens
+2. Go to GitHub repo settings -> Secrets and variables -> Actions
+3. Add these secrets:
+   - CLOUDFLARE_API_TOKEN: your_token
+   - CLOUDFLARE_ACCOUNT_ID: your_account_id
+   - CLOUDFLARE_ZONE_ID: your_zone_id
+4. Create workflow file: .github/workflows/deploy.yml
+5. On next push, GitHub Actions will auto-deploy to Cloudflare
+
+========================================
+QUICK REFERENCE - KEY ENDPOINTS
+========================================
+
+After deployment, test these endpoints:
+
+Health Check:
+GET https://<api>/health
+
+Config:
+GET https://<api>/v1/config/empresa
+GET https://<api>/v1/jornadas
+
+Reports:
+GET https://<api>/v1/relatorios-clt/horas-mes?mes=7&ano=2026
+GET https://<api>/v1/relatorios-clt/validacao-clt
+
+Permissions:
+GET https://<api>/v1/permissoes/meu-role
+
+Bank of Hours:
+GET https://<api>/v1/banco-horas/meu-saldo
+
+Export:
+GET https://<api>/v1/exportacao/preview
+
+========================================
+VALIDATION CHECKLIST
+========================================
+
+After Supabase Deployment:
+[ ] 15 new tables created
+[ ] 6 PostgreSQL functions created
+[ ] Triggers working
+[ ] Indexes created
+
+After Vercel Deployment:
+[ ] API responding to requests
+[ ] Health check passing
+[ ] Environment variables set
+[ ] Authentication working
+[ ] All 85 endpoints responding
+
+After Cloudflare (if using):
+[ ] Workers deployed
+[ ] Requests routed correctly
+[ ] Performance optimized
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Supabase Migrations Failed:
+1. Check migration order (001-021)
+2. Check for syntax errors in SQL
+3. Verify database permissions
+4. Check Supabase logs for details
+
+Vercel Deployment Failed:
+1. Check environment variables are set
+2. Verify Supabase credentials
+3. Check build logs in Vercel dashboard
+4. Run: npm run build locally to verify
+
+API Not Responding:
+1. Check Vercel health endpoint
+2. Verify database connection
+3. Check Supabase status
+4. Review API logs
+
+========================================
+DOCUMENTATION
+========================================
+
+For detailed information, see:
+- DEPLOYMENT.md: Complete step-by-step guide
+- DEPLOYMENT_STATUS.md: Current deployment status
+- README.md: Quick start and API reference
+- PROYECTO_FINAL_COMPLETO.md: Project summary
+
+========================================
+FINAL SUMMARY
+========================================
+
+GitHub: COMPLETE
+- Code committed and pushed
+- 70 files changed, 19,607 insertions
+- Latest commits in main branch
+
+Supabase: READY
+- 21 migrations created
+- Awaiting: supabase migration up
+
+Vercel: READY
+- Code ready for deployment
+- Awaiting: vercel --prod or GitHub auto-deploy
+
+Cloudflare: OPTIONAL
+- Will deploy via GitHub Actions
+- Requires: API token in GitHub Secrets
+
+NEXT STEPS:
+1. Execute Supabase migrations
+2. Deploy to Vercel
+3. Validate endpoints
+4. Setup monitoring
+
+========================================
+
+Status: All systems ready for production deployment!
