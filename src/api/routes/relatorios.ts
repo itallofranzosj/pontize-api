@@ -75,17 +75,39 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
       targetUsers = colabs?.map((c) => c.id) || [];
     }
 
-    // Calcular horas por usuário
-    const horasPorUsuario: Record<string, number> = {};
+    // Calcular horas por usuário baseado em marcações
+    // Agrupa por dia para contar entrada/saída
+    const marcacoesPorDia: Record<string, Record<string, any[]>> = {};
 
     marcacoes?.forEach((marc) => {
       if (targetUsers.length > 0 && !targetUsers.includes(marc.user_id)) return;
 
-      if (!horasPorUsuario[marc.user_id]) {
-        horasPorUsuario[marc.user_id] = 0;
+      const data = marc.marcada_em.split("T")[0];
+      const chave = `${marc.user_id}|${data}`;
+
+      if (!marcacoesPorDia[chave]) {
+        marcacoesPorDia[chave] = [];
       }
-      // Simplificação: contar como 1 marcação = 0.5 horas
-      horasPorUsuario[marc.user_id] += 0.5;
+      marcacoesPorDia[chave].push(marc);
+    });
+
+    // Contar 8 horas por dia com marcação (entrada + saída)
+    const horasPorUsuario: Record<string, number> = {};
+    Object.entries(marcacoesPorDia).forEach(([chave, macs]) => {
+      const [userId] = chave.split("|");
+      const temEntrada = macs.some((m) => m.tipo === "entrada");
+      const temSaida = macs.some((m) => ["saida", "saida_intervalo"].includes(m.tipo));
+
+      if (!horasPorUsuario[userId]) {
+        horasPorUsuario[userId] = 0;
+      }
+
+      // 8 horas se tem entrada E saída, 4 horas se tem apenas uma
+      if (temEntrada && temSaida) {
+        horasPorUsuario[userId] += 8;
+      } else if (temEntrada || temSaida) {
+        horasPorUsuario[userId] += 4;
+      }
     });
 
     const totalHoras = Object.values(horasPorUsuario).reduce((a, b) => a + b, 0);
@@ -142,13 +164,23 @@ relatoriosRouter.get("/comparecimento", zValidator("query", PeriodoSchema), asyn
       });
     }
 
-    // Para cada colaborador, contar dias com marcação
+    // Buscar marcações do período
+    const { data: marcacoes } = await supabase
+      .from("marcacoes")
+      .select("user_id")
+      .gte("marcada_em", `${ano}-${String(mes).padStart(2, "0")}-01`)
+      .lte("marcada_em", `${ano}-${String(mes).padStart(2, "0")}-${String(new Date(ano, mes, 0).getDate()).padStart(2, "0")}`)
+      .in("user_id", colaboradores.map((c) => c.id));
+
+    const usuariosComMarcacao = new Set(marcacoes?.map((m) => m.user_id) || []);
+
+    // Para cada colaborador, verificar se tem marcação
     const comparecimento = colaboradores.map((colab) => ({
       id: colab.id,
       nome: colab.nome,
       matricula: colab.matricula,
       setor_id: colab.setor_id,
-      presente: Math.random() > 0.2, // Placeholder
+      presente: usuariosComMarcacao.has(colab.id),
     }));
 
     const presentes = comparecimento.filter((c) => c.presente).length;
