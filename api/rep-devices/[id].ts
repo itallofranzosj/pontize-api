@@ -1,7 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// PATCH /api/rep-devices/:id — atualiza unidade vinculada / ativo / ingest_enabled
-// de um relógio. Usado pelo Pontize Agent (Windows) para editar e remover relógios.
+// PATCH /api/rep-devices/:id — atualiza os dados de um relógio (IP, modelo,
+// identificador, série, fabricante, tipo), unidade vinculada, ativo e
+// ingest_enabled. Usado pelo Pontize Agent (Windows) para editar e remover relógios.
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const { default: app } = await import('../../dist/api/index.js');

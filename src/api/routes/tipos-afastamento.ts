@@ -189,7 +189,8 @@ tiposAfastamentoRouter.delete("/:id", async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
-    return c.json({ success: true }, 204);
+    // 204 não pode ter corpo — retornar JSON com 204 nem compila no Hono.
+    return c.json({ success: true }, 200);
   } catch (error) {
     console.error("[TIPOS_AFASTAMENTO] DELETE erro:", error);
     return c.json({ error: "Internal server error" }, 500);

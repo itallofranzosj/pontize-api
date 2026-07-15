@@ -111,13 +111,23 @@ repDevicesRouter.post("/", zValidator("json", CreateDeviceSchema), async (c) => 
 
 const UpdateDeviceSchema = z
   .object({
+    // Dados do relógio — editáveis após o cadastro (corrigir IP digitado errado,
+    // modelo, identificador etc. sem precisar remover e recadastrar).
+    identificador: z.string().min(1).optional(),
+    fabricante: z.string().min(1).optional(),
+    modelo: z.string().min(1).optional(),
+    tipo_rep: z.string().min(1).optional(),
+    ip_local: z.string().min(1).nullable().optional(),
+    numero_serie: z.string().nullable().optional(),
+    // Vínculo/status
     unidade_id: z.string().uuid().nullable().optional(),
     ativo: z.boolean().optional(),
     ingest_enabled: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "Nada para atualizar" });
 
-// PATCH /v1/rep-devices/:id - Atualiza vínculo de unidade / status de um relógio.
+// PATCH /v1/rep-devices/:id - Atualiza os dados de um relógio (IP, modelo,
+// identificador, série, fabricante, tipo), vínculo de unidade e status.
 repDevicesRouter.patch("/:id", zValidator("json", UpdateDeviceSchema), async (c) => {
   const authedUser = c.get("user");
   if (!authedUser?.id) {
@@ -131,6 +141,8 @@ repDevicesRouter.patch("/:id", zValidator("json", UpdateDeviceSchema), async (c)
 
   const id = c.req.param("id");
   const payload = c.req.valid("json");
+  // Mesma convenção do POST: identificador sempre maiúsculo.
+  if (payload.identificador) payload.identificador = payload.identificador.toUpperCase();
 
   try {
     const { data, error } = await supabase
