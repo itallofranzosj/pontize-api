@@ -80,6 +80,47 @@ repDevicesRouter.post("/", zValidator("json", CreateDeviceSchema), async (c) => 
   const payload = c.req.valid("json");
 
   try {
+    // Reaproveitar em vez de duplicar: um relógio é identificado fisicamente por
+    // (fabricante, numero_serie) — há índice único nisso. Se já existir um com
+    // essa série (inclusive um que foi "removido"/inativado), reativa e atualiza
+    // esse registro em vez de tentar inserir de novo (o que estourava
+    // "duplicate key ... rep_devices_fabricante_serie_idx"). Só dá para
+    // deduplicar quando há número de série; sem série, cada cadastro é um novo.
+    if (payload.numero_serie) {
+      const { data: existente } = await supabase
+        .from("rep_devices")
+        .select("id, empresa_id")
+        .eq("fabricante", payload.fabricante)
+        .eq("numero_serie", payload.numero_serie)
+        .maybeSingle();
+
+      if (existente) {
+        if (existente.empresa_id !== resolved.empresaId) {
+          return c.json(
+            { error: "Este relógio (nº de série) já está cadastrado em outra empresa." },
+            409,
+          );
+        }
+        const { data, error } = await supabase
+          .from("rep_devices")
+          .update({
+            identificador: payload.identificador.toUpperCase(),
+            modelo: payload.modelo,
+            tipo_rep: payload.tipo_rep,
+            ip_local: payload.ip_local ?? null,
+            unidade_id: payload.unidade_id ?? null,
+            ativo: true,
+            ingest_enabled: true,
+          })
+          .eq("id", existente.id)
+          .select(DEVICE_COLUMNS)
+          .single();
+
+        if (error) return c.json({ error: error.message }, 400);
+        return c.json({ ok: true, data, reaproveitado: true }, 200);
+      }
+    }
+
     const { data, error } = await supabase
       .from("rep_devices")
       .insert({
