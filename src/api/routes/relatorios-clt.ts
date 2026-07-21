@@ -106,10 +106,16 @@ relatorioCltRouter.get(
       const totalNoturno = marcacoes?.reduce((sum, m) => sum + (m.adicional_noturno || 0), 0) || 0;
       const totalExtra = marcacoes?.reduce((sum, m) => sum + (m.adicional_extra || 0), 0) || 0;
 
+      // O recurso embutido `jornadas` chega como array do PostgREST; a jornada
+      // vigente do colaborador é a primeira (relação efetivamente 1:1).
+      const jornadaVigente = Array.isArray(profiles?.jornadas)
+        ? profiles?.jornadas[0]
+        : profiles?.jornadas;
+
       const relatorio = {
         data,
         colaborador: profiles,
-        jornada: profiles?.jornadas,
+        jornada: jornadaVigente,
         config: {
           jornada_padrao: config?.jornada_padrao_horas,
           intervalo_minimo: config?.intervalo_minimo_apos_6h,
@@ -127,7 +133,7 @@ relatorioCltRouter.get(
           adicional_extra: parseFloat(totalExtra.toFixed(2)),
         },
         validacoes: {
-          jornada_ok: totalHoras <= (profiles?.jornadas?.horas_dia || 8) + 2,
+          jornada_ok: totalHoras <= (jornadaVigente?.horas_dia || 8) + 2,
           intervalo_ok: totalIntervalo >= (config?.intervalo_minimo_apos_6h || 60) / 60,
           todas_marcacoes_validadas: (marcacoes || []).every((m) => m.validada),
         },

@@ -76,8 +76,8 @@ relatoriosRouter.get("/horas-mes", zValidator("query", PeriodoSchema), async (c)
     }
 
     // Calcular horas por usuário baseado em marcações
-    // Agrupa por dia para contar entrada/saída
-    const marcacoesPorDia: Record<string, Record<string, any[]>> = {};
+    // Agrupa por dia para contar entrada/saída — chave "userId|data" → marcações
+    const marcacoesPorDia: Record<string, any[]> = {};
 
     marcacoes?.forEach((marc) => {
       if (targetUsers.length > 0 && !targetUsers.includes(marc.user_id)) return;

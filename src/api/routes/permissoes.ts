@@ -172,7 +172,7 @@ permissoesRouter.put(
 
       return c.json({
         sucesso: true,
-        usuario_id,
+        usuario_id: user_id,
         novo_role: role,
         permissoes: ROLES[role as keyof typeof ROLES].permissoes,
       });

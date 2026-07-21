@@ -17,5 +17,8 @@
     "rootDir": "./src",
     "declaration": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Testes (vitest) não fazem parte do build da API — vitest nem está nas deps,
+  // então compilá-los quebrava o `tsc` (e o deploy) com "Cannot find module".
+  "exclude": ["src/**/*.test.ts"]
 }

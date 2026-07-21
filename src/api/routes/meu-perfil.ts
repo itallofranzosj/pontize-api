@@ -165,17 +165,19 @@ meuPerfilRouter.get("/banco-horas", async (c) => {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
+    // Ordenação/limite de recurso embutido vai como opção do query builder —
+    // dentro da string do select o PostgREST rejeita a query inteira e o
+    // banco de horas voltava sempre vazio.
     const { data: bancosHoras } = await supabase
       .from("banco_horas")
       .select(
         `*,
-         movimentacoes:movimentacoes_banco_horas(id, tipo, horas, data_movimentacao, descricao)
-           .order('data_movimentacao', { ascending: false })
-           .limit(10)
-        `
+         movimentacoes:movimentacoes_banco_horas(id, tipo, horas, data_movimentacao, descricao)`
       )
       .eq("user_id", authedUser.id)
-      .order("data_vencimento", { ascending: true });
+      .order("data_vencimento", { ascending: true })
+      .order("data_movimentacao", { referencedTable: "movimentacoes", ascending: false })
+      .limit(10, { referencedTable: "movimentacoes" });
 
     // Calcular alertas
     const alertas: string[] = [];

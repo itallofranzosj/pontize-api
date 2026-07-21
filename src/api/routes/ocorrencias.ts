@@ -349,7 +349,7 @@ ocorrenciasRouter.delete("/:id", async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
-    return c.json({ success: true }, 204);
+    return c.json({ success: true }, 200);
   } catch (error) {
     console.error("[OCORRENCIAS] DELETE erro:", error);
     return c.json({ error: "Internal server error" }, 500);
